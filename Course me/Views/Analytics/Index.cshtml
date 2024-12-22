@@ -1,0 +1,59 @@
+﻿@model IEnumerable<Course_me.Models.Analytic>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.DataDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CaloriesConsumed)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CaloriesBurned)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.WaterIntakeLiters)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.User)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.DataDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CaloriesConsumed)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CaloriesBurned)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.WaterIntakeLiters)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.User.UserId)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.AnalyticsId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.AnalyticsId">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.AnalyticsId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
