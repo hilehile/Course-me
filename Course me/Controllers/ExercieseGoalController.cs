@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
@@ -9,82 +12,39 @@ namespace Course_me.Controllers
     [ApiController]
     public class ExerciseGoalController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IExerciseGoalService _exerciseGoalService;
 
-        public ExerciseGoalController(MecourselaContext context)
+        public ExerciseGoalController(IExerciseGoalService exerciseGoalService)
         {
-            _context = context;
+            _exerciseGoalService = exerciseGoalService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ExerciseGoal>>> GetExerciseGoals()
-        {
-            return await _context.ExerciseGoals.ToListAsync();
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _exerciseGoalService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ExerciseGoal>> GetExerciseGoal(int id)
-        {
-            var exerciseGoal = await _context.ExerciseGoals.FindAsync(id);
-
-            if (exerciseGoal == null)
-            {
-                return NotFound();
-            }
-
-            return exerciseGoal;
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _exerciseGoalService.GetByIdAsync(id));
 
         [HttpPost]
-        public async Task<ActionResult<ExerciseGoal>> CreateExerciseGoal(ExerciseGoal exerciseGoal)
+        public async Task<IActionResult> Create(ExerciseGoal exerciseGoal)
         {
-            _context.ExerciseGoals.Add(exerciseGoal);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetExerciseGoal), new { id = exerciseGoal.ExerciseGoalId }, exerciseGoal);
+            await _exerciseGoalService.AddAsync(exerciseGoal);
+            return CreatedAtAction(nameof(GetById), new { id = exerciseGoal.ExerciseGoalId }, exerciseGoal);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateExerciseGoal(int id, ExerciseGoal exerciseGoal)
+        [HttpPut]
+        public async Task<IActionResult> Update(ExerciseGoal exerciseGoal)
         {
-            if (id != exerciseGoal.ExerciseGoalId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(exerciseGoal).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.ExerciseGoals.Any(e => e.ExerciseGoalId == id))
-                {
-                    return NotFound();
-                }
-
-                throw;
-            }
-
+            await _exerciseGoalService.UpdateAsync(exerciseGoal);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteExerciseGoal(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var exerciseGoal = await _context.ExerciseGoals.FindAsync(id);
-
-            if (exerciseGoal == null)
-            {
-                return NotFound();
-            }
-
-            _context.ExerciseGoals.Remove(exerciseGoal);
-            await _context.SaveChangesAsync();
-
+            await _exerciseGoalService.DeleteAsync(id);
             return NoContent();
         }
     }
 }
+

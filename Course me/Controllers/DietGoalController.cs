@@ -1,88 +1,48 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
+
 namespace Course_me.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class DietGoalController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IDietGoalService _dietGoalService;
 
-        public DietGoalController(MecourselaContext context)
+        public DietGoalController(IDietGoalService dietGoalService)
         {
-            _context = context;
+            _dietGoalService = dietGoalService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<DietGoal>>> GetDietGoals()
-        {
-            return await _context.DietGoals.ToListAsync();
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _dietGoalService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<DietGoal>> GetDietGoal(int id)
-        {
-            var dietGoal = await _context.DietGoals.FindAsync(id);
-
-            if (dietGoal == null)
-            {
-                return NotFound();
-            }
-
-            return dietGoal;
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _dietGoalService.GetByIdAsync(id));
 
         [HttpPost]
-        public async Task<ActionResult<DietGoal>> CreateDietGoal(DietGoal dietGoal)
+        public async Task<IActionResult> Create(DietGoal dietGoal)
         {
-            _context.DietGoals.Add(dietGoal);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetDietGoal), new { id = dietGoal.DietGoalId }, dietGoal);
+            await _dietGoalService.AddAsync(dietGoal);
+            return CreatedAtAction(nameof(GetById), new { id = dietGoal.DietGoalId }, dietGoal);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDietGoal(int id, DietGoal dietGoal)
+        [HttpPut]
+        public async Task<IActionResult> Update(DietGoal dietGoal)
         {
-            if (id != dietGoal.DietGoalId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(dietGoal).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.DietGoals.Any(e => e.DietGoalId == id))
-                {
-                    return NotFound();
-                }
-
-                throw;
-            }
-
+            await _dietGoalService.UpdateAsync(dietGoal);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDietGoal(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var dietGoal = await _context.DietGoals.FindAsync(id);
-
-            if (dietGoal == null)
-            {
-                return NotFound();
-            }
-
-            _context.DietGoals.Remove(dietGoal);
-            await _context.SaveChangesAsync();
-
+            await _dietGoalService.DeleteAsync(id);
             return NoContent();
         }
     }

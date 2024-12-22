@@ -1,85 +1,48 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    public class UserController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IUserService _userService;
 
-        public UsersController(MecourselaContext context)
+        public UserController(IUserService userService)
         {
-            _context = context;
+            _userService = userService;
         }
 
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var users = _context.Users.ToList();
-            return Ok(users);
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _userService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
-        {
-            var user = _context.Users.FirstOrDefault(u => u.UserId == id);
-            if (user == null)
-            {
-                return NotFound(new { message = "User not found" });
-            }
-            return Ok(user);
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _userService.GetByIdAsync(id));
 
         [HttpPost]
-        public IActionResult Create([FromBody] User user)
+        public async Task<IActionResult> Add(User user)
         {
-            if (user == null)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            _context.Users.Add(user);
-            _context.SaveChanges();
+            await _userService.AddAsync(user);
             return CreatedAtAction(nameof(GetById), new { id = user.UserId }, user);
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] User updatedUser)
+        [HttpPut]
+        public async Task<IActionResult> Update(User user)
         {
-            if (updatedUser == null || updatedUser.UserId != id)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            var existingUser = _context.Users.FirstOrDefault(u => u.UserId == id);
-            if (existingUser == null)
-            {
-                return NotFound(new { message = "User not found" });
-            }
-
-            existingUser.Username = updatedUser.Username;
-            existingUser.PasswordHash = updatedUser.PasswordHash;
-            existingUser.Email = updatedUser.Email;
-
-            _context.SaveChanges();
+            await _userService.UpdateAsync(user);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var user = _context.Users.FirstOrDefault(u => u.UserId == id);
-            if (user == null)
-            {
-                return NotFound(new { message = "User not found" });
-            }
-
-            _context.Users.Remove(user);
-            _context.SaveChanges();
+            await _userService.DeleteAsync(id);
             return NoContent();
         }
     }

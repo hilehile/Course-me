@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
@@ -9,81 +12,37 @@ namespace Course_me.Controllers
     [ApiController]
     public class WorkoutController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IWorkoutService _workoutService;
 
-        public WorkoutController(MecourselaContext context)
+        public WorkoutController(IWorkoutService workoutService)
         {
-            _context = context;
+            _workoutService = workoutService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Workout>>> GetWorkouts()
-        {
-            return await _context.Workouts.ToListAsync();
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _workoutService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Workout>> GetWorkout(int id)
-        {
-            var workout = await _context.Workouts.FindAsync(id);
-
-            if (workout == null)
-            {
-                return NotFound();
-            }
-
-            return workout;
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _workoutService.GetByIdAsync(id));
 
         [HttpPost]
-        public async Task<ActionResult<Workout>> CreateWorkout(Workout workout)
+        public async Task<IActionResult> Add(Workout workout)
         {
-            _context.Workouts.Add(workout);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetWorkout), new { id = workout.WorkoutId }, workout);
+            await _workoutService.AddAsync(workout);
+            return CreatedAtAction(nameof(GetById), new { id = workout.WorkoutId }, workout);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateWorkout(int id, Workout workout)
+        [HttpPut]
+        public async Task<IActionResult> Update(Workout workout)
         {
-            if (id != workout.WorkoutId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(workout).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Workouts.Any(e => e.WorkoutId == id))
-                {
-                    return NotFound();
-                }
-
-                throw;
-            }
-
+            await _workoutService.UpdateAsync(workout);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteWorkout(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var workout = await _context.Workouts.FindAsync(id);
-
-            if (workout == null)
-            {
-                return NotFound();
-            }
-
-            _context.Workouts.Remove(workout);
-            await _context.SaveChangesAsync();
-
+            await _workoutService.DeleteAsync(id);
             return NoContent();
         }
     }

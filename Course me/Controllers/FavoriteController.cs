@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
@@ -9,76 +12,37 @@ namespace Course_me.Controllers
     [ApiController]
     public class FavoriteController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IFavoriteService _favoriteService;
 
-        public FavoriteController(MecourselaContext context)
+        public FavoriteController(IFavoriteService favoriteService)
         {
-            _context = context;
+            _favoriteService = favoriteService;
         }
 
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var favorites = _context.Favorites.Include(f => f.User).ToList();
-            return Ok(favorites);
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _favoriteService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
-        {
-            var favorite = _context.Favorites.Include(f => f.User).FirstOrDefault(f => f.FavoriteId == id);
-            if (favorite == null)
-            {
-                return NotFound(new { message = "Favorite not found" });
-            }
-            return Ok(favorite);
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _favoriteService.GetByIdAsync(id));
 
         [HttpPost]
-        public IActionResult Create([FromBody] Favorite favorite)
+        public async Task<IActionResult> Create(Favorite favorite)
         {
-            if (favorite == null)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            _context.Favorites.Add(favorite);
-            _context.SaveChanges();
+            await _favoriteService.AddAsync(favorite);
             return CreatedAtAction(nameof(GetById), new { id = favorite.FavoriteId }, favorite);
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Favorite updatedFavorite)
+        [HttpPut]
+        public async Task<IActionResult> Update(Favorite favorite)
         {
-            if (updatedFavorite == null || updatedFavorite.FavoriteId != id)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            var existingFavorite = _context.Favorites.FirstOrDefault(f => f.FavoriteId == id);
-            if (existingFavorite == null)
-            {
-                return NotFound(new { message = "Favorite not found" });
-            }
-
-            existingFavorite.ItemId = updatedFavorite.ItemId;
-            existingFavorite.ItemType = updatedFavorite.ItemType;
-
-            _context.SaveChanges();
+            await _favoriteService.UpdateAsync(favorite);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var favorite = _context.Favorites.FirstOrDefault(f => f.FavoriteId == id);
-            if (favorite == null)
-            {
-                return NotFound(new { message = "Favorite not found" });
-            }
-
-            _context.Favorites.Remove(favorite);
-            _context.SaveChanges();
+            await _favoriteService.DeleteAsync(id);
             return NoContent();
         }
     }

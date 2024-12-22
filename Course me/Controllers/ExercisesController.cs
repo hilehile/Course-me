@@ -1,84 +1,48 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ExercisesController : ControllerBase
+    public class ExerciseController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IExerciseService _exerciseService;
 
-        public ExercisesController(MecourselaContext context)
+        public ExerciseController(IExerciseService exerciseService)
         {
-            _context = context;
+            _exerciseService = exerciseService;
         }
 
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var exercises = _context.Exercises.ToList();
-            return Ok(exercises);
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _exerciseService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
-        {
-            var exercise = _context.Exercises.FirstOrDefault(e => e.ExerciseId == id);
-            if (exercise == null)
-            {
-                return NotFound(new { message = "Exercise not found" });
-            }
-            return Ok(exercise);
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _exerciseService.GetByIdAsync(id));
 
         [HttpPost]
-        public IActionResult Create([FromBody] Exercise exercise)
+        public async Task<IActionResult> Create(Exercise exercise)
         {
-            if (exercise == null)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            _context.Exercises.Add(exercise);
-            _context.SaveChanges();
+            await _exerciseService.AddAsync(exercise);
             return CreatedAtAction(nameof(GetById), new { id = exercise.ExerciseId }, exercise);
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Exercise updatedExercise)
+        [HttpPut]
+        public async Task<IActionResult> Update(Exercise exercise)
         {
-            if (updatedExercise == null || updatedExercise.ExerciseId != id)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            var existingExercise = _context.Exercises.FirstOrDefault(e => e.ExerciseId == id);
-            if (existingExercise == null)
-            {
-                return NotFound(new { message = "Exercise not found" });
-            }
-
-            existingExercise.Name = updatedExercise.Name;
-            existingExercise.CaloriesBurnedPerMinute = updatedExercise.CaloriesBurnedPerMinute;
-
-            _context.SaveChanges();
+            await _exerciseService.UpdateAsync(exercise);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var exercise = _context.Exercises.FirstOrDefault(e => e.ExerciseId == id);
-            if (exercise == null)
-            {
-                return NotFound(new { message = "Exercise not found" });
-            }
-
-            _context.Exercises.Remove(exercise);
-            _context.SaveChanges();
+            await _exerciseService.DeleteAsync(id);
             return NoContent();
         }
     }

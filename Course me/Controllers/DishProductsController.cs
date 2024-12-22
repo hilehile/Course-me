@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
@@ -9,81 +12,37 @@ namespace Course_me.Controllers
     [ApiController]
     public class DishProductController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IDishProductService _dishProductService;
 
-        public DishProductController(MecourselaContext context)
+        public DishProductController(IDishProductService dishProductService)
         {
-            _context = context;
+            _dishProductService = dishProductService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<DishProduct>>> GetDishProducts()
-        {
-            return await _context.DishProducts.ToListAsync();
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _dishProductService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<DishProduct>> GetDishProduct(int id)
-        {
-            var dishProduct = await _context.DishProducts.FindAsync(id);
-
-            if (dishProduct == null)
-            {
-                return NotFound();
-            }
-
-            return dishProduct;
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _dishProductService.GetByIdAsync(id));
 
         [HttpPost]
-        public async Task<ActionResult<DishProduct>> CreateDishProduct(DishProduct dishProduct)
+        public async Task<IActionResult> Create(DishProduct dishProduct)
         {
-            _context.DishProducts.Add(dishProduct);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetDishProduct), new { id = dishProduct.DishProductId }, dishProduct);
+            await _dishProductService.AddAsync(dishProduct);
+            return CreatedAtAction(nameof(GetById), new { id = dishProduct.DishProductId }, dishProduct);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDishProduct(int id, DishProduct dishProduct)
+        [HttpPut]
+        public async Task<IActionResult> Update(DishProduct dishProduct)
         {
-            if (id != dishProduct.DishProductId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(dishProduct).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.DishProducts.Any(e => e.DishProductId == id))
-                {
-                    return NotFound();
-                }
-
-                throw;
-            }
-
+            await _dishProductService.UpdateAsync(dishProduct);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDishProduct(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var dishProduct = await _context.DishProducts.FindAsync(id);
-
-            if (dishProduct == null)
-            {
-                return NotFound();
-            }
-
-            _context.DishProducts.Remove(dishProduct);
-            await _context.SaveChangesAsync();
-
+            await _dishProductService.DeleteAsync(id);
             return NoContent();
         }
     }

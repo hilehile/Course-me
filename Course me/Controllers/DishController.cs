@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
@@ -9,81 +12,37 @@ namespace Course_me.Controllers
     [ApiController]
     public class DishController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IDishService _dishService;
 
-        public DishController(MecourselaContext context)
+        public DishController(IDishService dishService)
         {
-            _context = context;
+            _dishService = dishService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Dish>>> GetDishes()
-        {
-            return await _context.Dishes.ToListAsync();
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _dishService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Dish>> GetDish(int id)
-        {
-            var dish = await _context.Dishes.FindAsync(id);
-
-            if (dish == null)
-            {
-                return NotFound();
-            }
-
-            return dish;
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _dishService.GetByIdAsync(id));
 
         [HttpPost]
-        public async Task<ActionResult<Dish>> CreateDish(Dish dish)
+        public async Task<IActionResult> Create(Dish dish)
         {
-            _context.Dishes.Add(dish);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetDish), new { id = dish.DishId }, dish);
+            await _dishService.AddAsync(dish);
+            return CreatedAtAction(nameof(GetById), new { id = dish.DishId }, dish);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDish(int id, Dish dish)
+        [HttpPut]
+        public async Task<IActionResult> Update(Dish dish)
         {
-            if (id != dish.DishId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(dish).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Dishes.Any(e => e.DishId == id))
-                {
-                    return NotFound();
-                }
-
-                throw;
-            }
-
+            await _dishService.UpdateAsync(dish);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDish(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var dish = await _context.Dishes.FindAsync(id);
-
-            if (dish == null)
-            {
-                return NotFound();
-            }
-
-            _context.Dishes.Remove(dish);
-            await _context.SaveChangesAsync();
-
+            await _dishService.DeleteAsync(id);
             return NoContent();
         }
     }

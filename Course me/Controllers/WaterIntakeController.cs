@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
@@ -9,81 +12,37 @@ namespace Course_me.Controllers
     [ApiController]
     public class WaterIntakeController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IWaterIntakeService _waterIntakeService;
 
-        public WaterIntakeController(MecourselaContext context)
+        public WaterIntakeController(IWaterIntakeService waterIntakeService)
         {
-            _context = context;
+            _waterIntakeService = waterIntakeService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<WaterIntake>>> GetWaterIntakes()
-        {
-            return await _context.WaterIntakes.ToListAsync();
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _waterIntakeService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<WaterIntake>> GetWaterIntake(int id)
-        {
-            var waterIntake = await _context.WaterIntakes.FindAsync(id);
-
-            if (waterIntake == null)
-            {
-                return NotFound();
-            }
-
-            return waterIntake;
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _waterIntakeService.GetByIdAsync(id));
 
         [HttpPost]
-        public async Task<ActionResult<WaterIntake>> CreateWaterIntake(WaterIntake waterIntake)
+        public async Task<IActionResult> Add(WaterIntake waterIntake)
         {
-            _context.WaterIntakes.Add(waterIntake);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetWaterIntake), new { id = waterIntake.WaterIntakeId }, waterIntake);
+            await _waterIntakeService.AddAsync(waterIntake);
+            return CreatedAtAction(nameof(GetById), new { id = waterIntake.WaterIntakeId }, waterIntake);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateWaterIntake(int id, WaterIntake waterIntake)
+        [HttpPut]
+        public async Task<IActionResult> Update(WaterIntake waterIntake)
         {
-            if (id != waterIntake.WaterIntakeId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(waterIntake).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.WaterIntakes.Any(e => e.WaterIntakeId == id))
-                {
-                    return NotFound();
-                }
-
-                throw;
-            }
-
+            await _waterIntakeService.UpdateAsync(waterIntake);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteWaterIntake(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var waterIntake = await _context.WaterIntakes.FindAsync(id);
-
-            if (waterIntake == null)
-            {
-                return NotFound();
-            }
-
-            _context.WaterIntakes.Remove(waterIntake);
-            await _context.SaveChangesAsync();
-
+            await _waterIntakeService.DeleteAsync(id);
             return NoContent();
         }
     }

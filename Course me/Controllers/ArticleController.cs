@@ -1,89 +1,56 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
-
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 namespace Course_me.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class ArticleController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IArticleService _articleService;
 
-        public ArticleController(MecourselaContext context)
+        public ArticleController(IArticleService articleService)
         {
-            _context = context;
+            _articleService = articleService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Article>>> GetArticles()
+        public async Task<IActionResult> GetAll()
         {
-            return await _context.Articles.ToListAsync();
+            var articles = await _articleService.GetAllAsync();
+            return Ok(articles);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Article>> GetArticle(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var article = await _context.Articles.FindAsync(id);
-
-            if (article == null)
-            {
-                return NotFound();
-            }
-
-            return article;
+            var article = await _articleService.GetByIdAsync(id);
+            if (article == null) return NotFound();
+            return Ok(article);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Article>> CreateArticle(Article article)
+        public async Task<IActionResult> Add(Article article)
         {
-            _context.Articles.Add(article);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetArticle), new { id = article.ArticleId }, article);
+            await _articleService.AddAsync(article);
+            return CreatedAtAction(nameof(GetById), new { id = article.ArticleId }, article);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateArticle(int id, Article article)
+        [HttpPut]
+        public async Task<IActionResult> Update(Article article)
         {
-            if (id != article.ArticleId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(article).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Articles.Any(e => e.ArticleId == id))
-                {
-                    return NotFound();
-                }
-
-                throw;
-            }
-
+            await _articleService.UpdateAsync(article);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteArticle(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var article = await _context.Articles.FindAsync(id);
-
-            if (article == null)
-            {
-                return NotFound();
-            }
-
-            _context.Articles.Remove(article);
-            await _context.SaveChangesAsync();
-
+            await _articleService.DeleteAsync(id);
             return NoContent();
         }
     }

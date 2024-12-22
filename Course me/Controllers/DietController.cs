@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
@@ -9,81 +12,46 @@ namespace Course_me.Controllers
     [ApiController]
     public class DietController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IDietService _dietService;
 
-        public DietController(MecourselaContext context)
+        public DietController(IDietService dietService)
         {
-            _context = context;
+            _dietService = dietService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Diet>>> GetDiets()
+        public async Task<IActionResult> GetAll()
         {
-            return await _context.Diets.ToListAsync();
+            var diets = await _dietService.GetAllAsync();
+            return Ok(diets);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Diet>> GetDiet(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var diet = await _context.Diets.FindAsync(id);
-
-            if (diet == null)
-            {
-                return NotFound();
-            }
-
-            return diet;
+            var diet = await _dietService.GetByIdAsync(id);
+            if (diet == null) return NotFound();
+            return Ok(diet);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Diet>> CreateDiet(Diet diet)
+        public async Task<IActionResult> Add(Diet diet)
         {
-            _context.Diets.Add(diet);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetDiet), new { id = diet.DietId }, diet);
+            await _dietService.AddAsync(diet);
+            return CreatedAtAction(nameof(GetById), new { id = diet.DietId }, diet);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDiet(int id, Diet diet)
+        [HttpPut]
+        public async Task<IActionResult> Update(Diet diet)
         {
-            if (id != diet.DietId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(diet).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Diets.Any(e => e.DietId == id))
-                {
-                    return NotFound();
-                }
-
-                throw;
-            }
-
+            await _dietService.UpdateAsync(diet);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDiet(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var diet = await _context.Diets.FindAsync(id);
-
-            if (diet == null)
-            {
-                return NotFound();
-            }
-
-            _context.Diets.Remove(diet);
-            await _context.SaveChangesAsync();
-
+            await _dietService.DeleteAsync(id);
             return NoContent();
         }
     }

@@ -1,87 +1,48 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserDetailsController : ControllerBase
+    public class UserDetailController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IUserDetailService _userDetailService;
 
-        public UserDetailsController(MecourselaContext context)
+        public UserDetailController(IUserDetailService userDetailService)
         {
-            _context = context;
+            _userDetailService = userDetailService;
         }
 
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var userDetails = _context.UserDetails.Include(ud => ud.User).ToList();
-            return Ok(userDetails);
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _userDetailService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
-        {
-            var userDetail = _context.UserDetails.Include(ud => ud.User).FirstOrDefault(ud => ud.UserDetailId == id);
-            if (userDetail == null)
-            {
-                return NotFound(new { message = "User detail not found" });
-            }
-            return Ok(userDetail);
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _userDetailService.GetByIdAsync(id));
 
         [HttpPost]
-        public IActionResult Create([FromBody] UserDetail userDetail)
+        public async Task<IActionResult> Add(UserDetail userDetail)
         {
-            if (userDetail == null)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            _context.UserDetails.Add(userDetail);
-            _context.SaveChanges();
+            await _userDetailService.AddAsync(userDetail);
             return CreatedAtAction(nameof(GetById), new { id = userDetail.UserDetailId }, userDetail);
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] UserDetail updatedUserDetail)
+        [HttpPut]
+        public async Task<IActionResult> Update(UserDetail userDetail)
         {
-            if (updatedUserDetail == null || updatedUserDetail.UserDetailId != id)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            var existingUserDetail = _context.UserDetails.FirstOrDefault(ud => ud.UserDetailId == id);
-            if (existingUserDetail == null)
-            {
-                return NotFound(new { message = "User detail not found" });
-            }
-
-            existingUserDetail.FullName = updatedUserDetail.FullName;
-            existingUserDetail.BirthDate = updatedUserDetail.BirthDate;
-            existingUserDetail.Gender = updatedUserDetail.Gender;
-            existingUserDetail.HeightCm = updatedUserDetail.HeightCm;
-            existingUserDetail.WeightKg = updatedUserDetail.WeightKg;
-
-            _context.SaveChanges();
+            await _userDetailService.UpdateAsync(userDetail);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var userDetail = _context.UserDetails.FirstOrDefault(ud => ud.UserDetailId == id);
-            if (userDetail == null)
-            {
-                return NotFound(new { message = "User detail not found" });
-            }
-
-            _context.UserDetails.Remove(userDetail);
-            _context.SaveChanges();
+            await _userDetailService.DeleteAsync(id);
             return NoContent();
         }
     }

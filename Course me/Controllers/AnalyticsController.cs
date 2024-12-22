@@ -1,89 +1,57 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AnalyticsController : ControllerBase
+    public class AnalyticController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IAnalyticService _analyticService;
 
-        public AnalyticsController(MecourselaContext context)
+        public AnalyticController(IAnalyticService analyticService)
         {
-            _context = context;
+            _analyticService = analyticService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Analytic>>> GetAnalytics()
+        public async Task<IActionResult> GetAll()
         {
-            return await _context.Analytics.ToListAsync();
+            var analytics = await _analyticService.GetAllAsync();
+            return Ok(analytics);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Analytic>> GetAnalytics(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var analytics = await _context.Analytics.FindAsync(id);
-
-            if (analytics == null)
-            {
-                return NotFound();
-            }
-
-            return analytics;
+            var analytic = await _analyticService.GetByIdAsync(id);
+            if (analytic == null) return NotFound();
+            return Ok(analytic);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Analytic>> CreateAnalytics(Analytic analytics)
+        public async Task<IActionResult> Add(Analytic analytic)
         {
-            _context.Analytics.Add(analytics);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetAnalytics), new { id = analytics.AnalyticsId }, analytics);
+            await _analyticService.AddAsync(analytic);
+            return CreatedAtAction(nameof(GetById), new { id = analytic.AnalyticsId }, analytic);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateAnalytics(int id, Analytic analytics)
+        [HttpPut]
+        public async Task<IActionResult> Update(Analytic analytic)
         {
-            if (id != analytics.AnalyticsId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(analytics).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Analytics.Any(e => e.AnalyticsId == id))
-                {
-                    return NotFound();
-                }
-
-                throw;
-            }
-
+            await _analyticService.UpdateAsync(analytic);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAnalytics(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var analytics = await _context.Analytics.FindAsync(id);
-
-            if (analytics == null)
-            {
-                return NotFound();
-            }
-
-            _context.Analytics.Remove(analytics);
-            await _context.SaveChangesAsync();
-
+            await _analyticService.DeleteAsync(id);
             return NoContent();
         }
     }

@@ -1,87 +1,48 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Course_me.Models;
+using Domain.Models;
+using BusinessLogic.Services;
+using DataAccess;
+using Domain.Interfaces;
 
 namespace Course_me.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController : ControllerBase
+    public class ProductController : ControllerBase
     {
-        private readonly MecourselaContext _context;
+        private readonly IProductService _productService;
 
-        public ProductsController(MecourselaContext context)
+        public ProductController(IProductService productService)
         {
-            _context = context;
+            _productService = productService;
         }
 
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var products = _context.Products.ToList();
-            return Ok(products);
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _productService.GetAllAsync());
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
-        {
-            var product = _context.Products.FirstOrDefault(p => p.ProductId == id);
-            if (product == null)
-            {
-                return NotFound(new { message = "Product not found" });
-            }
-            return Ok(product);
-        }
+        public async Task<IActionResult> GetById(int id) => Ok(await _productService.GetByIdAsync(id));
 
         [HttpPost]
-        public IActionResult Create([FromBody] Product product)
+        public async Task<IActionResult> Add(Product product)
         {
-            if (product == null)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            _context.Products.Add(product);
-            _context.SaveChanges();
+            await _productService.AddAsync(product);
             return CreatedAtAction(nameof(GetById), new { id = product.ProductId }, product);
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Product updatedProduct)
+        [HttpPut]
+        public async Task<IActionResult> Update(Product product)
         {
-            if (updatedProduct == null || updatedProduct.ProductId != id)
-            {
-                return BadRequest(new { message = "Invalid data" });
-            }
-
-            var existingProduct = _context.Products.FirstOrDefault(p => p.ProductId == id);
-            if (existingProduct == null)
-            {
-                return NotFound(new { message = "Product not found" });
-            }
-
-            existingProduct.Name = updatedProduct.Name;
-            existingProduct.CaloriesPer100g = updatedProduct.CaloriesPer100g;
-            existingProduct.ProteinsPer100g = updatedProduct.ProteinsPer100g;
-            existingProduct.FatsPer100g = updatedProduct.FatsPer100g;
-            existingProduct.CarbsPer100g = updatedProduct.CarbsPer100g;
-
-            _context.SaveChanges();
+            await _productService.UpdateAsync(product);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var product = _context.Products.FirstOrDefault(p => p.ProductId == id);
-            if (product == null)
-            {
-                return NotFound(new { message = "Product not found" });
-            }
-
-            _context.Products.Remove(product);
-            _context.SaveChanges();
+            await _productService.DeleteAsync(id);
             return NoContent();
         }
     }
