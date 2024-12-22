@@ -9,28 +9,28 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repositories
 {
-    public class AnalyticRepository : IAnalyticRepository
+    public class ArticleRepository : IArticleRepository
     {
         private readonly MecourselaContext _context;
 
-        public AnalyticRepository(MecourselaContext context)
+        public ArticleRepository(MecourselaContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<Analytic?> GetByIdAsync(int id) => await _context.Analytics.FindAsync(id);
+        public async Task<Article?> GetByIdAsync(int id) => await _context.Articles.FindAsync(id);
 
-        public async Task<IEnumerable<Analytic>> GetAllAsync() => await _context.Analytics.ToListAsync();
+        public async Task<IEnumerable<Article>> GetAllAsync() => await _context.Articles.ToListAsync();
 
-        public async Task AddAsync(Analytic entity)
+        public async Task AddAsync(Article entity)
         {
-            await _context.Analytics.AddAsync(entity);
+            await _context.Articles.AddAsync(entity);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Analytic entity)
+        public async Task UpdateAsync(Article entity)
         {
-            _context.Analytics.Update(entity);
+            _context.Articles.Update(entity);
             await _context.SaveChangesAsync();
         }
 
@@ -39,7 +39,7 @@ namespace DataAccess.Repositories
             var entity = await GetByIdAsync(id);
             if (entity != null)
             {
-                _context.Analytics.Remove(entity);
+                _context.Articles.Remove(entity);
                 await _context.SaveChangesAsync();
             }
         }
